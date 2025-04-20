@@ -24,7 +24,7 @@ public class AuthService {
     private final JwtUtil jwtUtil;
 
     @Transactional
-    public SignupResponse signup(SignupRequest signupRequest) {
+    public String signup(SignupRequest signupRequest) {
         //요청 받은 이메일이 이미 존재하면 예외 발생
         if (userRepository.existsByEmail(signupRequest.getEmail())) {
             throw new InvalidRequestException("이미 존재하는 이메일입니다.");
@@ -42,13 +42,11 @@ public class AuthService {
         );
         User savedUser = userRepository.save(newUser);
 
-        String bearerToken = jwtUtil.createToken(savedUser.getId(), savedUser.getEmail(), userRole);
-
-        return new SignupResponse(bearerToken);
+       return jwtUtil.createToken(savedUser.getId(), savedUser.getEmail(), savedUser.getUserRole());
     }
 
     @Transactional(readOnly = true)
-    public SigninResponse signin(SigninRequest signinRequest) {
+    public String signin(SigninRequest signinRequest) {
         User user = userRepository.findByEmail(signinRequest.getEmail()).orElseThrow(
                 () -> new InvalidRequestException("가입되지 않은 유저입니다."));
 
@@ -57,8 +55,6 @@ public class AuthService {
             throw new AuthException("잘못된 비밀번호입니다.");
         }
 
-        String bearerToken = jwtUtil.createToken(user.getId(), user.getEmail(), user.getUserRole());
-
-        return new SigninResponse(bearerToken);
+        return jwtUtil.createToken(user.getId(), user.getEmail(), user.getUserRole());
     }
 }

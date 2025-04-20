@@ -6,6 +6,7 @@ import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.UnsupportedJwtException;
 import jakarta.servlet.FilterConfig;
 import jakarta.servlet.*;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -37,15 +38,26 @@ public class JwtFilter implements Filter {
             return;
         }
 
-        String bearerJwt = httpRequest.getHeader("Authorization");
+        //쿠키에서 토큰 추출
+        String jwt = null;
+        Cookie[] cookies = httpRequest.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if ("token".equals(cookie.getName())) {
+                    jwt = cookie.getValue();
+                    break;
+                }
+            }
+        }
 
-        if (bearerJwt == null) {
+        if (jwt == null) {
             // 토큰이 없는 경우 400을 반환합니다.
             httpResponse.sendError(HttpServletResponse.SC_BAD_REQUEST, "JWT 토큰이 필요합니다.");
             return;
         }
 
-        String jwt = jwtUtil.substringToken(bearerJwt);
+        //Bearer 제거 후 무필요
+        //String jwt = jwtUtil.substringToken(bearerJwt);
 
         try {
             // JWT 유효성 검사와 claims 추출
@@ -61,15 +73,16 @@ public class JwtFilter implements Filter {
             httpRequest.setAttribute("email", claims.get("email"));
             httpRequest.setAttribute("userRole", claims.get("userRole"));
 
-            if (url.startsWith("/admin")) {
-                // 관리자 권한이 없는 경우 403을 반환합니다.
-                if (!UserRole.ADMIN.equals(userRole)) {
-                    httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, "관리자 권한이 없습니다.");
-                    return;
-                }
-                chain.doFilter(request, response);
-                return;
-            }
+            //인터셉터와 중복되는 검사
+//            if (url.startsWith("/admin")) {
+//                // 관리자 권한이 없는 경우 403을 반환합니다.
+//                if (!UserRole.ADMIN.equals(userRole)) {
+//                    httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, "관리자 권한이 없습니다.");
+//                    return;
+//                }
+//                chain.doFilter(request, response);
+//                return;
+//            }
 
             chain.doFilter(request, response);
         } catch (SecurityException | MalformedJwtException e) {
