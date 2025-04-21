@@ -62,10 +62,12 @@ public class JwtFilter implements Filter {
         try {
             // JWT 유효성 검사와 claims 추출
             Claims claims = jwtUtil.extractClaims(jwt);
-            if (claims == null) {
-                httpResponse.sendError(HttpServletResponse.SC_BAD_REQUEST, "잘못된 JWT 토큰입니다.");
-                return;
-            }
+
+            //실제로 claims가 null인 경우 해당 코드에 도달하지 못함
+//            if (claims == null) {
+//                httpResponse.sendError(HttpServletResponse.SC_BAD_REQUEST, "잘못된 JWT 토큰입니다.");
+//                return;
+//            }
 
             UserRole userRole = UserRole.valueOf(claims.get("userRole", String.class));
 
